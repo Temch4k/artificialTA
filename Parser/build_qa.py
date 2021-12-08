@@ -9,6 +9,15 @@ def remove_html(_str):
 
 def clean_text(_str):
     _str = remove_html(_str)
+
+    _str = _str.encode("ascii", "ignore")
+    _str = _str.decode()
+
+    _str = re.sub(';', '; ', _str)
+
+    _str = re.sub('[&].([^\s]+)', '', _str)
+    _str = re.sub('[&].*[;]', '', _str)
+
     return _str.replace("\r\n"," ").replace("\r"," ").replace("\n", " ").replace("\\", "")
 
 tables = {
@@ -64,7 +73,8 @@ answer_length = []
 for _qa in qa.items():
     w.writerow(_qa[1])
     answer_length.append(len(_qa[1][1]))
-    
+
+# Go to first semi colon, if none go to first space
 avg_len = sum(answer_length) / len(answer_length)
 print(avg_len)
 f.close()
