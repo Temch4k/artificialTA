@@ -1,11 +1,14 @@
 from lxml import etree
+import os
 from pathlib import Path
 import csv, re
 
 HTML_RE = re.compile('<.*?>')
 
+
 def remove_html(_str):
     return re.sub(HTML_RE, '', _str)
+
 
 def clean_text(_str):
     _str = remove_html(_str)
@@ -20,61 +23,72 @@ def clean_text(_str):
 
     return _str.replace("\r\n"," ").replace("\r"," ").replace("\n", " ").replace("\\", "")
 
-tables = {
-    "Comments": ["Id","PostId","Score","Text","CreationDate","UserDisplayName","UserId","ContentLicense"],
-    "Posts": ["Id","PostTypeId","ParentId","AcceptedAnswerId","Score","Body","Title","Tags","AnswerCount","CommentCount","FavoriteCount"],
-}
 
-stackexchangefiles = ["{}.xml".format(table) for table in tables]
+def parse(directory):
+    tables = {
+        "Comments": ["Id", "PostId", "Score", "Text", "CreationDate", "UserDisplayName", "UserId", "ContentLicense"],
+        "Posts": ["Id", "PostTypeId", "ParentId", "AcceptedAnswerId", "Score", "Body", "Title", "Tags", "AnswerCount",
+                  "CommentCount", "FavoriteCount"],
+    }
 
-path = ".meta.stackexchange.com"
-domain = "3dprinting"
-full_path = domain+path
+    stackexchangefiles = ["{}.xml".format(table) for table in tables]
 
-xmlfile = "{}\\{}".format(full_path, stackexchangefiles[1])
+    full_path = "data" + '\\' + directory
 
-columns = tables["Posts"]
+    xmlfile = "{}\\{}".format(full_path, stackexchangefiles[1])
 
-f = open("out.csv", 'w', newline='', encoding="utf-8")
-w = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-#w.writerow(columns)
-l = []
-l.append(columns)
+    columns = tables["Posts"]
 
-context = etree.iterparse(xmlfile, events=('end',), tag='row')
-for event, element in context:
-    row=[clean_text(element.attrib[column]) if column in element.attrib else '' for column in columns]
-    #w.writerow(row)
-    l.append(row)
+    f = open("out.csv", 'w', newline='', encoding="utf-8")
+    w = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+    # w.writerow(columns)
+    l = []
+    l.append(columns)
 
-parentId_i = 2
-Id_i = 0
-title_i = 6
-body_i = 5
-score_i = 4
+    context = etree.iterparse(xmlfile, events=('end',), tag='row')
+    for event, element in context:
+        row = [clean_text(element.attrib[column]) if column in element.attrib else '' for column in columns]
+        # w.writerow(row)
+        l.append(row)
 
-qa = {}
+    parentId_i = 2
+    Id_i = 0
+    title_i = 6
+    body_i = 5
+    score_i = 4
 
-for i, row in enumerate(l):
-    if i != 0:
-        qa_pair = ["", ""]
-        if row[parentId_i] == "":
-            qa_pair[0] = row[title_i] + " " + row[body_i]
-            qa[row[Id_i]] = qa_pair
-        else:
-            qa[row[parentId_i]][1] += row[body_i]
+    qa = {}
 
-#print(qa)
+    for i, row in enumerate(l):
+        if i != 0:
+            qa_pair = ["", ""]
+            if row[parentId_i] == "":
+                qa_pair[0] = row[title_i] + " " + row[body_i]
+                qa[row[Id_i]] = qa_pair
+            else:
+                qa[row[parentId_i]][1] += row[body_i]
 
-w.writerow(["question", "answer"])
+    # print(qa)
 
-answer_length = []
+    w.writerow(["question", "answer"])
 
-for _qa in qa.items():
-    w.writerow(_qa[1])
-    answer_length.append(len(_qa[1][1]))
+    answer_length = []
 
-# Go to first semi colon, if none go to first space
-avg_len = sum(answer_length) / len(answer_length)
-print(avg_len)
-f.close()
+    for _qa in qa.items():
+        w.writerow(_qa[1])
+        answer_length.append(len(_qa[1][1]))
+
+    # Go to first semi colon, if none go to first space
+    avg_len = sum(answer_length) / len(answer_length)
+    print(avg_len)
+    f.close()
+
+if __name__ == '__main__':
+
+    rootdir = "data"
+    for subdir, dirs, files in os.walk(rootdir):
+        for dirsIN in dirs:
+            print()
+            print(dirsIN)
+            parse(dirsIN)
+
