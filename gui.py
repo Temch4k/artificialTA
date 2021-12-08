@@ -7,6 +7,12 @@ from tkinter import *
 from tkinter import font
 from tkinter import ttk
 
+
+def sendTo(msg):
+    print("our question inside of fnction: ",msg)
+    msg = "recieved"
+    return msg
+
 # GUI class for the chat
 class GUI:
     # constructor method
@@ -172,10 +178,14 @@ class GUI:
         self.textCons.insert(END,
                             self.name+": "+msg+"\n\n")
 
-        # here
+        messageBack = sendTo(msg)
+
+
+        self.textCons.config(state = NORMAL)
+        self.textCons.insert(END,"ta: " +messageBack+"\n\n")
+
         self.textCons.config(state = DISABLED)
         self.textCons.see(END)
-        return msg
 
 # create a GUI class object
 g = GUI()
